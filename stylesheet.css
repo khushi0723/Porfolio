@@ -52,7 +52,7 @@ body{
 
 .home{
     position:relative;
-    width:200%;
+    width:100%;
     justify-content: space-between;
     height:100vh;
     background:url(main\ photo.jpg)no-repeat;
