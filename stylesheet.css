@@ -52,7 +52,7 @@ body{
 
 .home{
     position:relative;
-    width:100%;
+    width:200%;
     justify-content: space-between;
     height:100vh;
     background:url(main\ photo.jpg)no-repeat;
@@ -63,7 +63,7 @@ body{
     padding:70px 10% 0;
 }
 .home-content{
-    max-width:600px;
+    max-width:100%;
 }
 
 .home-content h3{
