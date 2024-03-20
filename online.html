@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{
+            background-color: #081b29;
+            color: white;
+        }
+        p{
+            white-space: pre;
+        }
+       
+    </style>
+</head>
+<body>
+    <p>package com.onlinefoodorder;
+     <br>
+        import org.springframework.boot.SpringApplication;
+        import org.springframework.boot.autoconfigure.SpringBootApplication;
+        <br>
+        @SpringBootApplication
+        public class OnlineFoodOrderApplication {
+        <br>
+            public static void main(String[] args) {
+                SpringApplication.run(OnlineFoodOrderApplication.class, args);
+            }
+        
+        }
+        package com.onlinefoodorder;
+
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+
+public class ServletInitializer extends SpringBootServletInitializer {
+
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(OnlineFoodOrderApplication.class);
+	}
+
+}
+package com.onlinefoodorder.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+import com.onlinefoodorder.dao.AdminDao;
+import com.onlinefoodorder.model.Admin;
+
+@Controller
+public class AdminController {
+	
+	@Autowired
+	private AdminDao adminDao;
+	
+	@GetMapping("/")
+	public String goToHomeDuringStart() {
+		return "index";
+	}
+	
+	@GetMapping("/home")
+	public String goToHome() {
+		return "index";
+	}
+	
+	@GetMapping("/admindashboard")
+	public String goToAdminPage() {
+		return "admin";
+	}
+	
+	@GetMapping("/adminlogin")
+	public String goToAdminLoginPage() {
+		
+		return "adminlogin";
+	}
+	
+	@GetMapping("/adminregister")
+	public String goToAdminRegisterPage() {
+		
+		return "adminregister";
+	}
+	
+	@PostMapping("/adminregister")
+	public ModelAndView registerAdmin(@ModelAttribute Admin admin) {
+		ModelAndView mv = new ModelAndView();
+		if(this.adminDao.save(admin)!= null) {
+			mv.addObject("status", admin.getFirstname()+" Successfully Registered as ADMIN");
+			mv.setViewName("adminlogin");
+		}
+		
+		else {
+			mv.addObject("status", admin.getFirstname()+" Failed to Registered as ADMIN");
+			mv.setViewName("adminregister");
+	
+		}
+		
+		return mv;
+	}
+	
+	@PostMapping("/adminlogin")
+	public ModelAndView loginAdmin(HttpServletRequest request, @RequestParam("emailid") String emailId, @RequestParam("password") String password ) {
+		ModelAndView mv = new ModelAndView();
+		
+		Admin admin = adminDao.findByEmailidAndPassword(emailId, password);
+		
+		if(admin != null) {
+			HttpSession session = request.getSession();
+			session.setAttribute("active-user", admin);
+			session.setAttribute("user-login","admin");
+			mv.addObject("status", admin.getFirstname()+" Successfully Logged in as ADMIN!");
+			mv.setViewName("index");
+		}
+		
+		else {
+			mv.addObject("status","Failed to login as Admin!");
+			mv.setViewName("index");
+		}
+		
+		return mv;
+	}
+	
+}
+package com.onlinefoodorder.controller;
+
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.onlinefoodorder.dao.CartDao;
+import com.onlinefoodorder.model.Cart;
+
+@Controller
+public class CartController {
+
+	@Autowired
+	private CartDao cartDao;
+	
+	@GetMapping("/addToCart")
+	public ModelAndView addtoCart(@ModelAttribute Cart cart) {
+		ModelAndView mv = new ModelAndView();
+	
+		cartDao.save(cart);
+		mv.addObject("status", "Foods added to cart!");
+		mv.setViewName("index");
+		
+		return mv;
+	
+	}
+	
+	@GetMapping("/deletecart")
+	public ModelAndView deleteProductFromCart(@RequestParam("cartId") int  cartId) {
+		ModelAndView mv = new ModelAndView();
+		
+		Cart cart = new Cart();
+	
+		Optional<Cart> o = cartDao.findById(cartId);
+		if(o.isPresent()) {
+			cart = o.get();
+		}
+		
+		cartDao.delete(cart);
+		
+		mv.addObject("status", "Selected Food removed from Cart!");
+		mv.setViewName("index");
+		
+		return mv;
+	}
+	
+	
+	
+	
+
+}
+package com.onlinefoodorder.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.onlinefoodorder.dao.CategoryDao;
+import com.onlinefoodorder.dao.FoodDao;
+import com.onlinefoodorder.model.Category;
+import com.onlinefoodorder.model.Food;
+
+@Controller
+public class CategoryController {
+	
+	@Autowired
+	private FoodDao foodDao;
+	
+	@Autowired
+	private CategoryDao categoryDao;
+	
+	@PostMapping("/addcategory")
+	public ModelAndView addcategory(@ModelAttribute Category category) {
+		ModelAndView  mv = new ModelAndView();
+		
+		categoryDao.save(category);
+		
+		mv.addObject("status", "Category Added Successfully!");
+		mv.setViewName("index");
+		
+		return mv;
+	}
+	
+	@GetMapping("/deletecategory")
+	public ModelAndView deleteCategory(@RequestParam("categoryId") int categoryId) {
+        ModelAndView  mv = new ModelAndView();
+		
+        Category category = null;
+		Optional<Category> o = categoryDao.findById(categoryId);
+		
+		if(o.isPresent()) {
+			category = o.get();
+		}
+		
+		categoryDao.delete(category);
+        
+		List<Food> foods = foodDao.findByCategoryId(categoryId);
+		
+		for(Food food : foods) {
+			foodDao.delete(food);
+		}
+		
+		mv.addObject("status", "Category Deleted Successfully!");
+		mv.setViewName("index");
+		
+		return mv;
+	}
+	
+	@GetMapping("/category")
+	public ModelAndView category(@RequestParam("categoryId") int  categoryId) {
+		ModelAndView mv = new ModelAndView();
+		List<Food> foods = new ArrayList<>();
+		if(categoryId == 0) {
+			foods = foodDao.findAll();
+		}
+		
+		else {
+			foods = foodDao.findByCategoryId(categoryId);
+		}
+		
+		mv.addObject("foods", foods);
+		mv.addObject("sentFromOtherSource", "yes");
+		mv.setViewName("index");
+		
+		return mv;
+	}
+
+}
+package com.onlinefoodorder.controller;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.onlinefoodorder.dao.FoodDao;
+import com.onlinefoodorder.model.Food;
+
+@Controller
+@MultipartConfig
+public class FoodController {
+	
+	@Autowired
+	private FoodDao foodDao;
+	
+	@Value("${com.onlinefoodorder.image.folder.path}")
+	private String foodImageFolderPath;
+	
+	@PostMapping("/addfood")
+	public ModelAndView addProduct(HttpServletRequest request, HttpSession session) throws IOException, ServletException {
+        ModelAndView mv = new ModelAndView();
+		
+		String name=request.getParameter("name");
+		String description=request.getParameter("description");
+		Double price=Double.parseDouble(request.getParameter("price"));
+		Double discount=Double.parseDouble(request.getParameter("discount"));
+		int categoryId=Integer.parseInt(request.getParameter("categoryId"));
+		Part part=request.getPart("image");	
+		
+		String fileName=part.getSubmittedFileName();
+		
+		String uploadPath=foodImageFolderPath+fileName;
+		
+		try
+		{
+		FileOutputStream fos=new FileOutputStream(uploadPath);
+		InputStream is=part.getInputStream();
+		
+		byte[] data=new byte[is.available()];
+		is.read(data);
+		fos.write(data);
+		fos.close();
+		}
+		
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		Food food = new Food();
+		food.setCategoryId(categoryId);
+		food.setImagePath(fileName);
+		food.setName(name);
+		food.setPrice(price);
+		food.setDiscount(discount);
+		food.setDescription(description);
+	    
+		food = foodDao.save(food);
+		
+		if(food != null )
+	    {
+			mv.addObject("status", "Food Added Successfully.");
+	    }
+	    
+	   else
+	    {
+		   mv.addObject("status", "Failed to add food.");
+	    }
+		mv.setViewName("index");
+		
+		return mv;
+	}
+	
+	@PostMapping("/updatefood")
+	public ModelAndView updateProduct(HttpServletRequest request, HttpSession session) throws IOException, ServletException {
+		 ModelAndView mv = new ModelAndView();
+			int id = Integer.parseInt(request.getParameter("id"));
+			String name=request.getParameter("name");
+			String description=request.getParameter("description");
+			Double price=Double.parseDouble(request.getParameter("price"));
+			Double discount=Double.parseDouble(request.getParameter("discount"));
+			int categoryId=Integer.parseInt(request.getParameter("categoryId"));
+			Part part=request.getPart("image");	
+			
+			String fileName=part.getSubmittedFileName();
+			
+			String uploadPath=foodImageFolderPath+fileName;
+			
+			try
+			{
+			FileOutputStream fos=new FileOutputStream(uploadPath);
+			InputStream is=part.getInputStream();
+			
+			byte[] data=new byte[is.available()];
+			is.read(data);
+			fos.write(data);
+			fos.close();
+			}
+			
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+			
+			Food food = new Food();
+			food.setCategoryId(categoryId);
+			food.setImagePath(fileName);
+			food.setName(name);
+			food.setPrice(price);
+			food.setDiscount(discount);
+			food.setDescription(description);
+		    food.setId(id);
+			food = foodDao.save(food);
+			
+			if(food != null )
+		    {
+				mv.addObject("status", "Food updated Successfully.");
+		    }
+		    
+		    else
+		    {
+			   mv.addObject("status", "Failed to update food.");
+		    }
+			
+			mv.setViewName("index");
+			
+			return mv;
+	}
+	
+	@GetMapping("/searchfood")
+	public ModelAndView searchProductByName(@RequestParam("foodname") String foodName) throws IOException, ServletException {
+		ModelAndView mv = new ModelAndView();
+		List<Food> foods = new ArrayList<>();
+		foods = foodDao.findByNameContainingIgnoreCase(foodName);
+		   
+		mv.addObject("sentFromOtherSource","yes");
+		mv.addObject("foods", foods);
+		mv.setViewName("index");
+		
+		return mv;
+	}
+	
+	@GetMapping("/food")
+	public ModelAndView getFood(@RequestParam("foodId") int foodId) throws IOException, ServletException {
+		ModelAndView mv = new ModelAndView();
+		Food food = null;
+		Optional<Food> o = foodDao.findById(foodId);
+		
+		if(o.isPresent()) {
+			food = o.get();
+		}
+		   
+		mv.addObject("food", food);
+		mv.setViewName("food");
+		
+		return mv;
+	}
+	
+	@GetMapping("/deletefood")
+	public ModelAndView deleteFood(@RequestParam("foodId") int foodId) throws IOException, ServletException {
+		ModelAndView mv = new ModelAndView();
+		
+		Food food = null;
+		Optional<Food> o = foodDao.findById(foodId);
+		
+		if(o.isPresent()) {
+			food = o.get();
+		}
+		
+		foodDao.delete(food);
+		   
+		mv.addObject("status", "Food Deleted Successfully!");
+		mv.setViewName("index");
+		
+		return mv;
+	}
+	
+	@GetMapping("/updatefood")
+	public ModelAndView updateFood(@RequestParam("foodId") int foodId) throws IOException, ServletException {
+		ModelAndView mv = new ModelAndView();
+		
+		Food food = null;
+		Optional<Food> o = foodDao.findById(foodId);
+		
+		if(o.isPresent()) {
+			food = o.get();
+		}
+		   
+		mv.addObject("food", food);
+		mv.setViewName("updatefood");
+		
+		return mv;
+	}
+	
+}
+package com.onlinefoodorder.controller;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.onlinefoodorder.dao.CartDao;
+import com.onlinefoodorder.dao.OrderDao;
+import com.onlinefoodorder.model.Cart;
+import com.onlinefoodorder.model.Orders;
+import com.onlinefoodorder.model.User;
+import com.onlinefoodorder.utility.Constants;
+import com.onlinefoodorder.utility.Helper;
+
+@Controller
+public class OrderController {
+	
+	@Autowired
+	private CartDao cartDao;
+	
+	@Autowired
+	private OrderDao orderDao;
+
+	@PostMapping("/order")
+	public ModelAndView orderfoods(HttpSession session) {
+        ModelAndView mv = new ModelAndView();
+		
+        User user = (User)session.getAttribute("active-user");
+        
+		String orderId = Helper.getAlphaNumericOrderId(10);
+		String orderedDate = LocalDate.now().toString();
+		
+		List<Cart> carts = cartDao.findByUserId(user.getId());
+		
+		for(Cart cart : carts) {
+			Orders order = new Orders();
+			order.setOrderDate(orderedDate);
+			order.setOrderId(orderId);
+			order.setUserId(user.getId());
+			order.setQuantity(cart.getQuantity());
+			order.setFoodId(cart.getFoodId());
+			order.setDeliveryStatus(Constants.DeliveryStatus.PENDING.value());
+			order.setDeliveryDate(Constants.DeliveryStatus.PENDING.value());
+			orderDao.save(order);
+			cartDao.delete(cart);
+		}
+		
+	
+	    mv.addObject("status","Order placed Successfully, Order Id is "+orderId);
+		mv.setViewName("index");
+		return mv;
+	}
+	
+	@GetMapping("/myorder")
+	public ModelAndView goToMyOrder(HttpSession session) {
+		User user = (User)session.getAttribute("active-user");
+		ModelAndView mv = new ModelAndView();
+		List<Orders> orders = orderDao.findByUserId(user.getId());
+		mv.addObject("orders", orders);
+		mv.setViewName("myorder");
+		return mv;
+	}
+	
+	@GetMapping("/searchorderbyid")
+	public ModelAndView searchByOrderId(@RequestParam("orderid") String orderId) {
+		ModelAndView mv = new ModelAndView();
+		List<Orders> orders = orderDao.findByOrderId(orderId);
+		mv.addObject("orders", orders);
+		mv.setViewName("myorder");
+		return mv;
+	}
+	
+	@GetMapping("/searchorderbydate")
+	public ModelAndView searchByOrderDate(@RequestParam("orderdate") String orderDate, HttpSession session) {
+		User user = (User)session.getAttribute("active-user");
+		ModelAndView mv = new ModelAndView();
+		List<Orders> orders = orderDao.findByOrderDateAndUserId(orderDate, user.getId());
+		mv.addObject("orders", orders);
+		mv.setViewName("myorder");
+		return mv;
+	}
+	
+	@PostMapping("/checkout")
+	public ModelAndView searchByOrderDate(@RequestParam("amount") String amount) {
+		
+		ModelAndView mv = new ModelAndView();
+	
+		mv.addObject("amount", amount);
+		mv.setViewName("checkout");
+		return mv;
+	}
+	
+	@GetMapping("/updatedeliverydate")
+	public ModelAndView addDeliveryStatus(@RequestParam("orderId") String orderId, @RequestParam("deliveryStatus") String deliveryStatus, @RequestParam("deliveryDate") String deliveryDate ) {
+		ModelAndView mv = new ModelAndView();
+		
+		List<Orders> orders = this.orderDao.findByOrderId(orderId);
+		
+		for(Orders order : orders) {
+			order.setDeliveryDate(deliveryDate);
+			order.setDeliveryStatus(deliveryStatus);
+		    this.orderDao.save(order);
+		}
+			mv.addObject("status", "Order Delivery Status Updated.");
+			mv.setViewName("index");
+	        return mv;
+	}
+	
+	
+	
+}
+package com.onlinefoodorder.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+import com.onlinefoodorder.dao.UserDao;
+import com.onlinefoodorder.model.User;
+
+@Controller
+public class UserController {
+	
+	@Autowired
+	private UserDao userDao;
+	
+	@GetMapping("/userlogin")
+	public String goToLoginPage() {
+		return "userlogin";
+	}
+	
+	@GetMapping("/userregister")
+	public String goToRegisterPage() {
+		return "userregister";
+	}
+	
+	@GetMapping("/logout")
+	public ModelAndView logout(HttpSession session) {
+		ModelAndView mv = new ModelAndView();
+		
+		session.removeAttribute("active-user");
+		session.removeAttribute("user-login");
+		mv.addObject("status","Logged out Successfully");
+		mv.setViewName("index");
+		
+		return mv;
+	}
+	
+	@PostMapping("/userregister")
+	public ModelAndView registerAdmin(@ModelAttribute User user) {
+		ModelAndView mv = new ModelAndView();
+		if(this.userDao.save(user)!= null) {
+			mv.addObject("status", user.getFirstname()+" Successfully Registered!");
+			mv.setViewName("userlogin");
+		}
+		
+		else {
+			mv.addObject("status", user.getFirstname()+" Failed to Registered User!");
+			mv.setViewName("userregister");
+	
+		}
+		
+		return mv;
+	}
+	
+	@PostMapping("/forgetpassword")
+	public ModelAndView forgetpassword(@ModelAttribute User forgetPassDetail) {
+		ModelAndView mv = new ModelAndView();
+		
+		User user = userDao.findByEmailidAndMobileno(forgetPassDetail.getEmailid(), forgetPassDetail.getMobileno());
+		
+		if(user != null) {
+			user.setPassword(forgetPassDetail.getPassword());
+			userDao.save(user);
+			
+			mv.addObject("status", "Password Changed");
+			mv.setViewName("userlogin");
+		}
+		
+		else {
+			mv.addObject("status", "No User found!");
+			mv.setViewName("userregister");
+		}
+		
+		return mv;
+	}
+	
+	@PostMapping("/userlogin")
+	public ModelAndView loginAdmin(HttpServletRequest request, @RequestParam("emailid") String emailId, @RequestParam("password") String password ) {
+		ModelAndView mv = new ModelAndView();
+		
+		User user = userDao.findByEmailidAndPassword(emailId, password);
+		
+		if(user != null) {
+			HttpSession session = request.getSession();
+			session.setAttribute("active-user", user);
+			session.setAttribute("user-login","user");
+			mv.addObject("status", user.getFirstname()+" Successfully Logged In!");
+			mv.setViewName("index");
+		}
+		
+		else {
+			mv.addObject("status","Failed to login!");
+			mv.setViewName("index");
+		}
+		
+		return mv;
+	}
+	
+
+}
+</p>
+<p class="interface">
+<h4>Interfaces</h4>
+<br>
+package com.onlinefoodorder.dao;
+<br>
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import com.onlinefoodorder.model.Admin;
+<br>
+@Repository
+public interface AdminDao extends JpaRepository<Admin, Integer> {
+	
+	Admin findByEmailidAndPassword(String emailId , String password);
+	Admin findByEmailid(String emailId);
+    <br>
+}
+package com.onlinefoodorder.dao;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import com.onlinefoodorder.model.Category;
+
+@Repository
+public interface CategoryDao extends JpaRepository<Category, Integer> {
+
+}
+package com.onlinefoodorder.dao;
+<br>
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import com.onlinefoodorder.model.Food;
+<br>
+@Repository
+public interface FoodDao extends JpaRepository<Food, Integer> {
+	
+	List<Food> findByNameContainingIgnoreCase(String name);
+	List<Food> findByCategoryId(int categpryId);
+	
+	@Query(value="delete from Food f where f.categoryId = :categoryId")
+	void deleteProductByCategoryId(@Param("categoryId") int categoryId);
+
+}
+package com.onlinefoodorder.dao;
+<br>
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.onlinefoodorder.model.Orders;
+
+@Repository
+public interface OrderDao extends JpaRepository<Orders , Integer> {
+	<br>
+	List<Orders> findByOrderId(String orderId);
+	List<Orders> findByUserId(int userId);
+	List<Orders> findByOrderDate(String orderDate);
+	List<Orders> findByOrderDateAndUserId(String orderDate, int userId);
+
+}
+<br>
+package com.onlinefoodorder.dao;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import com.onlinefoodorder.model.User;
+<br>
+@Repository
+public interface UserDao extends JpaRepository<User, Integer> {
+	
+	User findByEmailidAndPassword(String emailId, String password);
+	User findByEmailid(String emailId);
+	User findByEmailidAndMobileno(String emailId, String mobileNo);
+    <br>
+}
+package com.onlinefoodorder.hashing;
+<br>
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+<br>
+public class MD5Hashing {
+	<br>
+	//MD5 Hashing Algorithm
+	public static String doHashing (String password)
+	{
+		  StringBuilder sb = null;
+		  try {
+		   MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+		   
+		   messageDigest.update(password.getBytes());
+		   
+		   byte[] resultByteArray = messageDigest.digest();
+		   
+		   sb = new StringBuilder();
+		   
+		   for (byte b : resultByteArray) {
+		    sb.append(String.format("%02x", b));
+		   }
+		   
+		   <br>
+		   
+		  } catch (NoSuchAlgorithmException e) {
+		   e.printStackTrace();
+		  }
+		 
+		  return sb.toString();
+    }
+
+}
+<br>
+package com.onlinefoodorder.model;
+<br>
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+<br>
+@Entity
+public class Admin {
+	<br>
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="Id")
+	private int id;
+	
+	@Column(name="FirstName")
+	private String firstname;
+	
+	@Column(name="LastName")
+	private String lastname;
+	
+	@Column(name="EmailId")
+	private String emailid;
+	
+	@Column(name="Password")
+	private String password;
+	
+	@Column(name="MobileNo")
+	private String mobileno;
+	
+	@Column(name="Street")
+	private String street;
+	
+	@Column(name="City")
+	private String city;
+	
+	@Column(name="Pincode")
+	private String pincode;
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getFirstname() {
+		return firstname;
+	}
+
+	public void setFirstname(String firstname) {
+		this.firstname = firstname;
+	}
+
+	public String getLastname() {
+		return lastname;
+	}
+
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
+	}
+
+	public String getEmailid() {
+		return emailid;
+	}
+
+	public void setEmailid(String emailid) {
+		this.emailid = emailid;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getMobileno() {
+		return mobileno;
+	}
+
+	public void setMobileno(String mobileno) {
+		this.mobileno = mobileno;
+	}
+
+	public String getStreet() {
+		return street;
+	}
+
+	public void setStreet(String street) {
+		this.street = street;
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public String getPincode() {
+		return pincode;
+	}
+
+	public void setPincode(String pincode) {
+		this.pincode = pincode;
+	}
+	
+	<br>
+
+  }
+  package com.onlinefoodorder.model;
+  <br>
+  import javax.persistence.Column;
+  import javax.persistence.Entity;
+  import javax.persistence.GeneratedValue;
+  import javax.persistence.GenerationType;
+  import javax.persistence.Id;
+  import lombok.AllArgsConstructor;
+  import lombok.Getter;
+  import lombok.NoArgsConstructor;
+  import lombok.Setter;
+  <br>
+  @Entity
+  public class Cart {
+      
+      @Id
+      @GeneratedValue(strategy=GenerationType.IDENTITY)
+      @Column(name="Id")
+      private int id;
+      
+      @Column(name="FoodId")
+      private int foodId;
+      
+      @Column(name="UserId")
+      private int userId;
+      
+      @Column(name="Date")
+      private String date;
+      
+      @Column(name="Quantity")
+      private int quantity;
+  
+      public int getId() {
+          return id;
+      }
+  
+      public void setId(int id) {
+          this.id = id;
+      }
+  
+      public int getUserId() {
+          return userId;
+      }
+  
+      public void setUserId(int userId) {
+          this.userId = userId;
+      }
+  
+      public String getDate() {
+          return date;
+      }
+  
+      public void setDate(String date) {
+          this.date = date;
+      }
+  
+      public int getQuantity() {
+          return quantity;
+      }
+  
+      public void setQuantity(int quantity) {
+          this.quantity = quantity;
+      }
+  
+      public int getFoodId() {
+          return foodId;
+      }
+  
+      public void setFoodId(int foodId) {
+          this.foodId = foodId;
+      }
+      <br>  
+  }
+  package com.onlinefoodorder.model;
+  <br>
+  import javax.persistence.Column;
+  import javax.persistence.Entity;
+  import javax.persistence.GeneratedValue;
+  import javax.persistence.GenerationType;
+  import javax.persistence.Id;
+  <br>
+  @Entity
+  public class Category {
+      
+      @Id
+      @GeneratedValue(strategy=GenerationType.IDENTITY)
+      @Column(name="Id")
+      private int id;
+      
+      @Column(name="Name")
+      private String name;
+      
+      @Column(name="Description")
+      private String description;
+  
+      public int getId() {
+          return id;
+      }
+  
+      public void setId(int id) {
+          this.id = id;
+      }
+  
+      public String getName() {
+          return name;
+      }
+  
+      public void setName(String name) {
+          this.name = name;
+      }
+  
+      public String getDescription() {
+          return description;
+      }
+  
+      public void setDescription(String description) {
+          this.description = description;
+      }
+      <br>  
+  }
+  package com.onlinefoodorder.model;
+  <br>
+  import javax.persistence.Column;
+  import javax.persistence.Entity;
+  import javax.persistence.GeneratedValue;
+  import javax.persistence.GenerationType;
+  import javax.persistence.Id;
+  import javax.persistence.JoinColumn;
+  import javax.persistence.OneToOne;
+  import lombok.AllArgsConstructor;
+  import lombok.Getter;
+  import lombok.NoArgsConstructor;
+  import lombok.Setter;
+  <br>
+  @Entity
+  public class Food {
+      
+      @Id
+      @GeneratedValue(strategy=GenerationType.IDENTITY)
+      @Column(name="Id")
+      private int id;
+      
+      @Column(name="Name")
+      private String name;
+      
+      @Column(name="Description")
+      private String description;
+      
+      @Column(name="Price")
+      private double price;
+      
+      @Column(name="Discount")
+      private double discount;
+      
+      @Column(name="ImagePath")
+      private String imagePath;
+  
+      @Column(name="CategoryId")
+      private int categoryId;
+  
+      public int getId() {
+          return id;
+      }
+  
+      public void setId(int id) {
+          this.id = id;
+      }
+  
+      public String getName() {
+          return name;
+      }
+  
+      public void setName(String name) {
+          this.name = name;
+      }
+  
+      public String getDescription() {
+          return description;
+      }
+  
+      public void setDescription(String description) {
+          this.description = description;
+      }
+  
+      public double getPrice() {
+          return price;
+      }
+  
+      public void setPrice(double price) {
+          this.price = price;
+      }
+  
+      public double getDiscount() {
+          return discount;
+      }
+  
+      public void setDiscount(double discount) {
+          this.discount = discount;
+      }
+  
+      public String getImagePath() {
+          return imagePath;
+      }
+  
+      public void setImagePath(String imagePath) {
+          this.imagePath = imagePath;
+      }
+  
+      public int getCategoryId() {
+          return categoryId;
+      }
+  
+      public void setCategoryId(int categoryId) {
+          this.categoryId = categoryId;
+      }
+      
+      <br>  
+  }
+  package com.onlinefoodorder.model;
+  <br>
+  import javax.persistence.Column;
+  import javax.persistence.Entity;
+  import javax.persistence.GeneratedValue;
+  import javax.persistence.GenerationType;
+  import javax.persistence.Id;
+  import lombok.AllArgsConstructor;
+  import lombok.Getter;
+  import lombok.NoArgsConstructor;
+  import lombok.Setter;
+  
+  @Entity
+  public class Orders {
+    <br>
+      
+      @Id
+      @GeneratedValue(strategy=GenerationType.IDENTITY)
+      @Column(name="Id")
+      private int id;
+      
+      @Column(name="OrderId")
+      private String orderId;
+      
+      @Column(name="UserId")
+      private int userId;
+      
+      @Column(name="FoodId")
+      private int foodId;
+      
+      @Column(name="Quantity")
+      private int quantity;
+      
+      @Column(name="OrderDate")
+      private String orderDate;
+      
+      @Column(name="DeliveryDate")
+      private String deliveryDate;
+      
+      @Column(name="DeliveryStatus")
+      private String deliveryStatus;
+  
+      public int getId() {
+          return id;
+      }
+  
+      public void setId(int id) {
+          this.id = id;
+      }
+  
+      public String getOrderId() {
+          return orderId;
+      }
+  
+      public void setOrderId(String orderId) {
+          this.orderId = orderId;
+      }
+  
+      public int getUserId() {
+          return userId;
+      }
+  
+      public void setUserId(int userId) {
+          this.userId = userId;
+      }
+  
+      public int getFoodId() {
+          return foodId;
+      }
+  
+      public void setFoodId(int foodId) {
+          this.foodId = foodId;
+      }
+  
+      public int getQuantity() {
+          return quantity;
+      }
+  
+      public void setQuantity(int quantity) {
+          this.quantity = quantity;
+      }
+  
+      public String getOrderDate() {
+          return orderDate;
+      }
+  
+      public void setOrderDate(String orderDate) {
+          this.orderDate = orderDate;
+      }
+  
+      public String getDeliveryDate() {
+          return deliveryDate;
+      }
+  
+      public void setDeliveryDate(String deliveryDate) {
+          this.deliveryDate = deliveryDate;
+      }
+  
+      public String getDeliveryStatus() {
+          return deliveryStatus;
+      }
+  
+      public void setDeliveryStatus(String deliveryStatus) {
+          this.deliveryStatus = deliveryStatus;
+      }
+      
+  }
+  <br>
+
+  package com.onlinefoodorder.model;
+  <br>
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+<br>
+@Entity
+public class User {
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="Id")
+	private int id;
+	
+	@Column(name="FirstName")
+	private String firstname;
+	
+	@Column(name="LastName")
+	private String lastname;
+	
+	@Column(name="EmailId")
+	private String emailid;
+	
+	@Column(name="Password")
+	private String password;
+	
+	@Column(name="MobileNo")
+	private String mobileno;
+	
+	@Column(name="Street")
+	private String street;
+	
+	@Column(name="City")
+	private String city;
+	
+	@Column(name="Pincode")
+	private String pincode;
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getFirstname() {
+		return firstname;
+	}
+
+	public void setFirstname(String firstname) {
+		this.firstname = firstname;
+	}
+    <br>
+	public String getLastname() {
+		return lastname;
+	}
+
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
+	}
+
+	public String getEmailid() {
+		return emailid;
+	}
+
+	public void setEmailid(String emailid) {
+		this.emailid = emailid;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+    <br>
+	public void setPassword(String password) {
+		this.password = password;
+	}
+    <br>
+	public String getMobileno() {
+		return mobileno;
+	}
+    <br>
+	public void setMobileno(String mobileno) {
+		this.mobileno = mobileno;
+	}
+    <br>
+	public String getStreet() {
+		return street;
+	}
+    <br>
+	public void setStreet(String street) {
+		this.street = street;
+	}
+    <br>
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public String getPincode() {
+		return pincode;
+	}
+
+	public void setPincode(String pincode) {
+		this.pincode = pincode;
+	}
+	
+  }
+  <br>
+  package com.onlinefoodorder.utility;
+
+public class Constants {
+
+	public enum DeliveryStatus {
+		DELIVERED("Delivered"),
+		PENDING("Pending"),
+		ON_THE_WAY("On the Way");
+		
+		private String status;
+
+	    private DeliveryStatus(String status) {
+	      this.status = status;
+	    }
+
+	    public String value() {
+	      return this.status;
+	    }
+	     
+	}
+	<br>
+}
+package com.onlinefoodorder.utility;
+<br>
+import java.util.List;
+import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.onlinefoodorder.dao.FoodDao;
+import com.onlinefoodorder.model.Cart;
+import com.onlinefoodorder.model.Food;
+
+public class Helper {
+	
+	@Autowired
+	private FoodDao foodDao;
+	
+	public static String get10Words(String productDescription)
+    {
+    	String[] str=productDescription.split(" ");
+    	if(str.length>10)
+    	{
+    		String res="";
+    		for(int i=0;i<10;i++)
+    		{
+    			res=res+str[i]+" ";
+    		}
+    		
+    		return res+"...";
+    	}
+    	
+    	else
+    	{
+    		return productDescription+"...";
+    	}
+    }
+    
+    public static double getFoodSellingPrice(double foodPrice,double foodDiscountPercent)
+    {
+    	
+    	Double tenPercentValue=foodDiscountPercent*0.01;
+    	Double tenPercentOfPrice=tenPercentValue*foodPrice;
+    	Double finalPrice=foodPrice-tenPercentOfPrice;
+    	
+    	return finalPrice;
+    }
+    
+    public static String getAlphaNumericOrderId(int n)
+    {
+  
+        // chose a Character random from this String
+        String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                    + "0123456789"
+                                    + "abcdefghijklmnopqrstuvxyz";
+  
+        // create StringBuffer size of AlphaNumericString
+        StringBuilder sb = new StringBuilder(n);
+  
+        for (int i = 0; i < n; i++) {
+  
+            // generate a random number between
+            // 0 to AlphaNumericString variable length
+            int index
+                = (int)(AlphaNumericString.length()
+                        * Math.random());
+  
+            // add Character one by one in end of sb
+            sb.append(AlphaNumericString
+                          .charAt(index));
+        }
+  
+        return sb.toString();
+    }
+    
+    public double getProductsTotalSellingPrice(List<Cart> carts) {
+    	double totalPrice = 0;
+    	for(Cart c : carts) {
+    		Optional<Food> optinal = foodDao.findById(c.getFoodId());
+    		Food f = null;
+    		f = optinal.get();
+    	    double foodPrice = getFoodSellingPrice(f.getPrice(),f.getDiscount());
+    	    totalPrice = totalPrice + (foodPrice*c.getQuantity());
+    	    
+    	}
+    	
+    	return totalPrice;
+    	
+    }
+    
+    
+}
+
+
+    </p>
+    <h4>Jsp Files</h4>
+    <p>
+        <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Admin Page- Online Food Ordering</title>
+<%@ include file="./components/common_cs_js.jsp"%>
+
+</head>
+<body>
+	<%@ include file="./components/navbar.jsp"%>
+
+	<%
+	List<Category> li = new ArrayList<>();
+	li = categoryDao.findAll();
+	List<User> listOfAllUsers = new ArrayList<>();
+	listOfAllUsers = userDao.findAll();
+	%>
+
+	<div class="container admin mt-2">
+		<%@ include file="./components/message.jsp"%>
+		<div class="row mt-3">
+			<div class="col-md-4">
+				<div class="card hover" data-toggle="modal"
+					data-target="#show-users-modal">
+					<div class="card-body text-center">
+						<div class="container">
+							<img style="max-width: 120px" class="img-fluid rounded-circle"
+								src="resources/images/user.png" alt="users_pic">
+						</div>
+						<h1><%=userDao.count()%></h1>
+						<h2 class="text-uppercase text-muted">Users</h2>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-4">
+				<div class="card hover" data-toggle="modal"
+					data-target="#show-category-modal">
+					<div class="card-body text-center">
+						<div class="container">
+							<img style="max-width: 120px" class="img-fluid rounded-circle"
+								src="resources/images/category.png" alt="users_pic">
+						</div>
+						<h1><%=categoryDao.count()%></h1>
+						<h2 class="text-uppercase text-muted">Total Category</h2>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-4">
+				<div class="card hover" data-toggle="modal"
+					data-target="#show-product-modal">
+					<div class="card-body text-center">
+						<div class="container">
+							<img style="max-width: 120px" class="img-fluid rounded-circle"
+								src="resources/images/product.png" alt="users_pic">
+						</div>
+						<h1><%=foodDao.count()%></h1>
+						<h2 class="text-uppercase text-muted">Total Foods</h2>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row mt-3">
+			<div class="col-md-4">
+				<div class="card hover" data-toggle="modal"
+					data-target="#total-order-modal">
+					<div class="card-body text-center">
+						<div class="container">
+							<img style="max-width: 120px" class="img-fluid rounded-circle"
+								src="resources/images/check.png" alt="users_pic">
+						</div>
+						<h1 class="text-lowercase text-muted"><%=orderDao.count()%></h1>
+						<h2 class="text-uppercase text-muted">Total Orders</h2>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-4">
+				<div class="card hover" data-toggle="modal"
+					data-target="#add-category-modal">
+					<div class="card-body text-center">
+						<div class="container md-5">
+							<img style="max-width: 120px" class="img-fluid rounded-circle"
+								src="resources/images/addCategory.jpg" alt="users_pic">
+						</div>
+						<p class="text-lowercase text-muted mt-2 " style="font-size: 22px">click
+							to add category</p>
+						<h2 class="text-uppercase text-muted mt-1">Add Category</h2>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-4">
+				<div class="card hover" data-toggle="modal"
+					data-target="#add-product-modal">
+					<div class="card-body text-center">
+						<div class="container">
+							<img style="max-width: 120px" class="img-fluid rounded-circle"
+								src="resources/images/addproduct.png" alt="users_pic">
+						</div>
+						<p class="text-lowercase text-muted mt-2 " style="font-size: 22px">click
+							to add food</p>
+						<h2 class="text-uppercase text-muted">Add Food</h2>
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+	</div>
+
+	<!-- add category modal -->
+
+	<div class="modal fade" id="add-category-modal" tabindex="-1"
+		role="dialog" aria-labelledby="exampleModalLongTitle"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header custom-bg text-white">
+					<h5 class="modal-title text-color" id="exampleModalLongTitle">Fill
+						category details.</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<form action="addcategory" method="post">
+						<div class="form-group">
+							<input type="text" class="form-control" name="name"
+								placeholder="Enter Category Title here" required>
+						</div>
+
+						<div class="form-group">
+							<textarea style="height: 250px" class="form-control"
+								name="description" placeholder="Enter Category Description here"
+								required></textarea>
+						</div>
+
+						<div class="container text-center">
+							<button class="btn custom-bg text-color">Add Category</button>
+							<button type="button" class="btn btn-secondary"
+								data-dismiss="modal">Close</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<!-- end add category modal -->
+
+	<!-- add product modal -->
+
+	<div class="modal fade" id="add-product-modal" tabindex="-1"
+		role="dialog" aria-labelledby="exampleModalLongTitle"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header custom-bg text-white">
+					<h5 class="modal-title text-color" id="exampleModalLongTitle">Add Food
+						details.</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<form action="addfood" method="post" enctype="multipart/form-data">
+						<div class="form-group">
+							<input type="text" class="form-control" name="name"
+								placeholder="Enter Food Title here" required>
+						</div>
+
+						<div class="form-group">
+							<textarea style="height: 150px" class="form-control"
+								name="description" placeholder="Enter Food Description here"
+								required></textarea>
+						</div>
+
+						<div class="form-group">
+							<input type="number" class="form-control" name="price"
+								placeholder="Enter Food Price here" required>
+						</div>
+
+						<div class="form-group">
+							<input type="text" class="form-control" name="discount"
+								placeholder="Enter Food Discount in (%)" required>
+						</div>
+
+						<div class="form-group">
+							<select name="categoryId" class="form-control">
+								<option value="">Select Category</option>
+								<%
+								for (Category category : li) {
+								%>
+								<option value="<%=category.getId()%>"><%=category.getName()%></option>
+								<%
+								}
+								%>
+							</select>
+						</div>
+
+						<div class="form-group">
+							<label>Select Food Pic</label><br> <input type="file"
+								class="form-control" name="image" required>
+						</div>
+
+						<div class="container text-center">
+							<button class="btn custom-bg text-color">Add Food</button>
+							<button type="button" class="btn btn-secondary"
+								data-dismiss="modal">Close</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- end add product modal -->
+
+	<!-- show users modal -->
+
+	<div class="modal fade" id="show-users-modal" tabindex="-1"
+		role="dialog" aria-labelledby="exampleModalLongTitle"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header custom-bg text-white text-center">
+					<h5 class="modal-title text-color" id="exampleModalLongTitle">Total
+						Users</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="table-responsive">
+						<table class="table">
+							<thead class="custom-bg text-white">
+								<tr class="text-color">
+									<th scope="col">User Id</th>
+									<th scope="col">First Name</th>
+									<th scope="col">Last Name</th>
+									<th scope="col">Email Id</th>
+									<th scope="col">Mobile</th>
+									<th scope="col">Address</th>
+								</tr>
+							</thead>
+							<tbody>
+
+								<%
+								for (User u : listOfAllUsers) {
+								%>
+								<tr>
+									<th scope="row" class="mid-align"><%=u.getId()%></th>
+									<td class="mid-align"><%=u.getFirstname()%></td>
+									<td class="mid-align"><%=u.getLastname()%></td>
+									<td class="mid-align"><%=u.getEmailid()%></td>
+									<td class="mid-align"><%=u.getMobileno()%></td>
+									<td class="mid-align"><%=u.getStreet() + " " + u.getCity() + " " + u.getPincode()%></td>
+								</tr>
+								<%
+								}
+								%>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- end of show users modal -->
+
+	<!-- show category modal -->
+
+	<div class="modal fade" id="show-category-modal" tabindex="-1"
+		role="dialog" aria-labelledby="exampleModalLongTitle"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header custom-bg text-white text-center">
+					<h5 class="modal-title text-color" id="exampleModalLongTitle">Total
+						Category</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="table-responsive">
+						<table class="table">
+							<thead class="custom-bg text-white">
+								<tr class="text-color">
+									<th scope="col">Category Id</th>
+									<th scope="col">Category Name</th>
+									<th scope="col">Category Description</th>
+									<th scope="col">Action</th>
+								</tr>
+							</thead>
+							<tbody>
+
+								<%
+								for (Category c : categoryDao.findAll()) {
+								%>
+								<tr>
+									<td class="mid-align"><%=c.getId()%></td>
+									<td class="mid-align"><%=c.getName()%></td>
+									<td class="mid-align"><%=c.getDescription()%></td>
+									<td class="mid-align"><a
+										href="deletecategory?categoryId=<%=c.getId()%>"><input
+											type="submit" class="btn btn-danger" value="Delete"></a></td>
+								</tr>
+								<%
+								}
+								%>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ********************* -->
+
+	<!-- show Product modal -->
+
+	<div class="modal fade" id="show-product-modal" tabindex="-1"
+		role="dialog" aria-labelledby="exampleModalLongTitle"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header custom-bg text-white text-center">
+					<h5 class="modal-title text-color" id="exampleModalLongTitle">Total Food</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="table-responsive">
+						<table class="table">
+							<thead class="custom-bg text-white">
+								<tr class="text-color">
+									<th scope="col">Food Name</th>
+									<th scope="col">Food Image</th>
+									<th scope="col">Food Description</th>
+									<th scope="col">Food Category</th>
+									<th scope="col">Food Price</th>
+									<th scope="col">Food Discount</th>
+								</tr>
+							</thead>
+							<tbody>
+								<%
+								List<Food> lp = foodDao.findAll();
+								%>
+
+								<%
+								for (Food p : lp) {
+								%>
+								<tr>
+									<td class="mid-align"><%=p.getName()%></td>
+									<td class="mid-align"><img style="max-width: 70px"
+										class="img-fluid"
+										src="resources/productpic/<%=p.getImagePath()%>"
+										alt="users_pic"></td>
+									<td class="mid-align"><%=p.getDescription()%></td>
+
+									<%
+									Category cat = null;
+									Optional<Category> optional = categoryDao.findById(p.getCategoryId());
+									if (optional.isPresent()) {
+										cat = optional.get();
+									}
+									%>
+
+									<td class="mid-align"><%=cat.getName()%></td>
+									<td class="mid-align"><%=p.getPrice()%></td>
+									<td class="mid-align"><%=p.getDiscount()%></td>
+
+								</tr>
+								<%
+								}
+								%>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ********************* -->
+
+	<!-- total order modal -->
+
+	<div class="modal fade bd-example-modal-lg" id="total-order-modal"
+		tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-size" role="document">
+			<div class="modal-content">
+				<div class="modal-header custom-bg text-white text-center">
+					<h5 class="modal-title text-color" id="exampleModalLongTitle">TOTAL
+						ORDERS</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+
+				<div class="modal-body">
+
+					<%
+					List<Orders> lor = orderDao.findAll();
+					if (lor == null) {
+					%>
+					<div class="text-center">
+						<h1>NO ORDERS MADE BY ANYONE !!</h1>
+						<hr>
+						<button type="button" class="btn btn-secondary"
+							data-dismiss="modal">Close</button>
+					</div>
+					<%
+					}
+
+					else {
+					%>
+					<div class="table-responsive">
+						<table class="table">
+							<thead class="custom-bg text-white">
+								<tr class="text-center text-color">
+									<th scope="col">Order Id</th>
+									<th scope="col">User Id</th>
+									<th scope="col">User Name</th>
+									<th scope="col">User Email</th>
+									<th scope="col">User Phone</th>
+									<th scope="col">Food Image</th>
+									<th scope="col">Food Title</th>
+									<th scope="col">Qnty</th>
+									<th scope="col">Price</th>
+									<th scope="col">Ord. date</th>
+									<th scope="col">Delivery date</th>
+									<th scope="col">Delivery Status</th>
+									<th scope="col">Action</th>
+								</tr>
+							</thead>
+
+
+
+							<tbody>
+
+								<%
+								for (Orders o : lor) {
+
+									Optional<Food> of = foodDao.findById(o.getFoodId());
+									Food f = null;
+
+									if (of.isPresent()) {
+										f = of.get();
+									}
+
+									Optional<User> ou = userDao.findById(o.getUserId());
+									User u = null;
+
+									if (of.isPresent()) {
+										u = ou.get();
+									}
+								%>
+								<tr class="text-center">
+									<td class="mid-align"><%=o.getOrderId()%></td>
+									<td class="mid-align"><%=u.getId()%></td>
+									<td class="mid-align"><%=u.getFirstname()%></td>
+									<td class="mid-align"><%=u.getEmailid()%></td>
+									<td class="mid-align"><%=u.getMobileno()%></td>
+									<td><img
+										style="max-height: 100px; max-width: 70px; width: auto;"
+										class="img-fluid mx-auto d-block"
+										src="resources/productpic/<%=f.getImagePath()%>"
+										alt="users_pic"></td>
+									<td class="mid-align"><%=f.getName()%></td>
+									<td class="mid-align"><%=o.getQuantity()%></td>
+									<td class="mid-align"><%=(new Helper().getFoodSellingPrice(f.getPrice(), f.getDiscount())) * o.getQuantity()%></td>
+									<td class="mid-align"><%=o.getOrderDate()%></td>
+									<td class="mid-align"><%=o.getDeliveryDate()%></td>
+									<td class="mid-align"><%=o.getDeliveryStatus()%></td>
+									<td class="mid-align">
+										<form action="updatedeliverydate">
+
+											<input type="hidden" name="orderId" value=<%=o.getOrderId()%>>
+
+											<div class="form-group mx-sm-3 mb-2">
+												<input type="date" class="form-control" name="deliveryDate"
+													placeholder="Delivery Date" size="85" required>
+											</div>
+											<div class="form-group mx-sm-3 mb-2">
+												<select name="deliveryStatus" class="form-control">
+													<option value="Pending">Pending</option>
+													<option value="Delivered">Delivered</option>
+													<option value="On the Way">On the Way</option>
+													<option value="Processing">Processing</option>
+												</select>
+											</div>
+											<button type="submit" class="btn custom-bg text-white mb-2">Set</button>
+										</form>
+									</td>
+								</tr>
+								<%
+								}
+								%>
+							</tbody>
+
+
+						</table>
+					</div>
+					<hr>
+
+					<div class="text-center">
+						<button type="button" class="btn btn-secondary ml-5"
+							data-dismiss="modal">Close</button>
+					</div>
+					<%
+					}
+					%>
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!--  -->
+
+</body>
+</html>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Admin Login</title>
+<%@ include file="./components/common_cs_js.jsp"%>
+</head>
+<body>
+<%@ include file="./components/navbar.jsp"%>
+<div class="container-fluid">
+  <div class="row mt-2">
+       <div class="col-md-4 offset-md-4 admin" >
+            <div class="card">
+                <%@ include file="./components/message.jsp"%>
+                <div class="card-body px-5">
+                    <img src="resources/images/registerphoto.jpeg" class="rounded mx-auto d-block" alt="img" height="90px" width="90px">
+                    <h3 class="text-center my-3">Admin Login</h3>
+            <form action="adminlogin" method="post">
+                 <div class="form-group">
+                     <label for="email">User name</label>
+                     <input type="text" class="form-control" id="username" aria-describedby="emailHelp" name="emailid" placeholder="Enter email id.." required>
+                 </div>
+              
+                 <div class="form-group">
+                     <label for="password">Password</label>
+                     <input type="password" class="form-control" id="password" aria-describedby="emailHelp" name="password" placeholder="Enter password.." required>
+                     <small id="passwordHelpInline" class="text-muted">
+                        Must be 8-20 characters long.
+                     </small>
+                 </div>
+        
+                <div class="container text-center">
+                      <button class="btn custom-bg text-color"><b>Login</b></button>
+                </div>
+                 
+            </form>
+                </div>
+            </div>
+           
+            
+       </div>
+  </div>
+</div>
+</body>
+</html>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Admin Register</title>
+<%@ include file="./components/common_cs_js.jsp"%>
+</head>
+<body>
+<%@ include file="./components/navbar.jsp"%>
+<div class="container-fluid">
+  <div class="row mt-2">
+       <div class="col-md-4 offset-md-4 admin" >
+            <div class="card">
+                <%@ include file="./components/message.jsp"%>
+                <div class="card-body px-5">
+                    <img src="resources/images/registerphoto.jpeg" class="rounded mx-auto d-block" alt="img" height="90px" width="90px">
+                    <h3 class="text-center my-3">Register Admin</h3>
+            <form action="adminregister" method="post">
+            
+                 <div class="form-group">
+                     <label for="name">First Name</label>
+                     <input type="text" class="form-control" id="firstname" aria-describedby="emailHelp" name="firstname" placeholder="Enter first name.." required>
+                 </div>
+                 
+                  <div class="form-group">
+                     <label for="name">Last Name</label>
+                     <input type="text" class="form-control" id="lastname" aria-describedby="emailHelp" name="lastname" placeholder="Enter last name.." required>
+                 </div>
+                 
+                 <div class="form-group">
+                     <label for="email">Email</label>
+                     <input type="email" class="form-control" id="emailid" aria-describedby="emailHelp" name="emailid" placeholder="Enter email id.." required>
+                 </div>
+           
+          
+                  <div class="form-group">
+                     <label for="email">Mobile</label>
+                     <input type="number" class="form-control" id="mobileno" aria-describedby="emailHelp" name="mobileno" placeholder="Enter mobile no.." required>
+                 </div>
+                 
+                  <div class="form-group">
+                     <label for="name">Street</label>
+                     <input type="text" class="form-control" id="street" aria-describedby="emailHelp" name="street" placeholder="Enter email id.." required>
+                 </div>
+                 
+             
+                 <div class="form-group">
+                     <label for="name">City</label>
+                     <input type="text" class="form-control" id="city" aria-describedby="emailHelp" name="city" placeholder="Enter city.." required>
+                 </div>
+                 
+                 <div class="form-group">
+                     <label for="email">Pin code</label>
+                     <input type="number" class="form-control" id="pincode" aria-describedby="emailHelp" name="pincode" placeholder="Enter pincode.." required>
+                 </div>
+              
+               
+                 <div class="form-group">
+                     <label for="password">Password</label>
+                     <input type="password" class="form-control" id="password" aria-describedby="emailHelp" name="password" placeholder="Enter password.." required>
+                     <small id="passwordHelpInline" class="text-muted">
+                        Must be 8-20 characters long.
+                     </small>
+                 </div>
+                 
+            
+                <div class="container text-center">
+                      <button class="btn custom-bg text-color"><b>Register</b></button>
+                 </div>
+                 
+            </form>
+                </div>
+            </div>
+           
+            
+       </div>
+  </div>
+</div>
+</body>
+</html>
+    </p>
+</body>
+</html>
